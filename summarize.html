@@ -11,23 +11,51 @@
         box-sizing: border-box;
       }
 
+      /*
+      70A597 GPT Green
+      E63946 RED
+      1D3557 DARK BLUE
+      F6F8FF WHITE
+      E59500 ORANGE
+      */
+
       /* Set the width of the body */
       body {
         width: 340px;
         height: 400px;
         text-align: center;
+        margin: 0;
+      }
+
+      header {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        justify-content: space-between;
+        align-items: center;
+        margin: 5px;
+      }
+
+      h1 {
+        font-size: 16px;
+        text-align: right;
+        border-right: 1px solid black;
+        padding-right: 8px;
+        margin: 0;
+        line-height: 1;
       }
 
       /* Style the buttons */
       button {
-        background-color: #1e90ff;
+        background-color: #70A597;
         color: white;
         border: none;
-        padding: 5px 15px;
-        font-size: 16px;
+        padding: 5px;
+        font-size: 14px;
+        width: 69px;
         cursor: pointer;
         margin: 0 5px;
-        border-radius: 5px;
+        border-radius: 3px;
       }
 
       /* Style the button container */
@@ -47,9 +75,9 @@
 
       /* Style the output field */
       textarea {
-        width: 100%;
-        height: 320px;
-        margin-top: 15px;
+        width: 330px;
+        height: 345px;
+        margin: 5px;
         padding: 10px;
         resize: none;
         border: 1px solid #ccc;
@@ -57,23 +85,23 @@
         font-size: 14px;
         color: #444;
         overflow: auto;
-        
       }
 
       textarea:focus {
-        border: 1px solid #ccc;
         outline: none; /* Add this line to remove the thick outline */
         }
 
     </style>
   </head>
   <body>
-    <h1 style="font-size: 18px;">Summarize <span style="color:#70a597;">GPT</span></h1>
-    <div class="button-container">
-      <button id="brief-btn" value="very briefly">Brief</button>
-      <button id="medium-btn" value="">Standard</button>
-      <button id="detailed-btn" value="very detailed">Detailed</button>
-    </div>
+    <header>
+      <h1>Summarize <span style="color:#70a597;">GPT</span></h1>
+      <div class="button-container">
+        <button id="brief-btn" value="very briefly">Brief</button>
+        <button id="medium-btn" value="">Standard</button>
+        <button id="detailed-btn" value="very detailed">Detailed</button>
+      </div>
+    </header>
     <textarea id="output" placeholder="Select the desired summary length" readonly></textarea>
     <script src="app.js"></script>
   </body>
