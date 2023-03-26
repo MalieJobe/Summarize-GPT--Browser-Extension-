@@ -1,0 +1,12 @@
+{
+    "manifest_version": 3,
+    "name": "Summarize GPT",
+    "version": "1.0.0",
+    "description": "A Chrome extension that summarizes web pages using OpenAI's GPT-3.",
+    "permissions": ["activeTab", "scripting"],
+    "action": {
+      "default_icon": "icon.png",
+      "default_popup": "summarize.html"
+    }
+  }
+  

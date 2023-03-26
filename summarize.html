@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>Summarize <span style="color:#70a597;">GPT</span></title>
+    <style>
+      /* Set everything to use border-box */
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+
+      /* Set the width of the body */
+      body {
+        width: 340px;
+        height: 400px;
+        text-align: center;
+      }
+
+      /* Style the buttons */
+      button {
+        background-color: #1e90ff;
+        color: white;
+        border: none;
+        padding: 5px 15px;
+        font-size: 16px;
+        cursor: pointer;
+        margin: 0 5px;
+        border-radius: 5px;
+      }
+
+      /* Style the button container */
+      .button-container {
+        display: flex;
+        flex-direction: row;
+        justify-content: center;
+        align-items: center;
+      }
+
+      /* Give the buttons a metallic look */
+      button:hover {
+        background-color: #6bb5ff;
+        box-shadow: 0px 0px 5px #888;
+      }
+
+
+      /* Style the output field */
+      textarea {
+        width: 100%;
+        height: 320px;
+        margin-top: 15px;
+        padding: 10px;
+        resize: none;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        font-size: 14px;
+        color: #444;
+        overflow: auto;
+        
+      }
+
+      textarea:focus {
+        border: 1px solid #ccc;
+        outline: none; /* Add this line to remove the thick outline */
+        }
+
+    </style>
+  </head>
+  <body>
+    <h1 style="font-size: 18px;">Summarize <span style="color:#70a597;">GPT</span></h1>
+    <div class="button-container">
+      <button id="brief-btn" value="very briefly">Brief</button>
+      <button id="medium-btn" value="">Standard</button>
+      <button id="detailed-btn" value="very detailed">Detailed</button>
+    </div>
+    <textarea id="output" placeholder="Select the desired summary length" readonly></textarea>
+    <script src="app.js"></script>
+  </body>
+</html>
