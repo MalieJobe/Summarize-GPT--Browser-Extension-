@@ -9,33 +9,32 @@ briefBtn.addEventListener('click', function(){generateSummary(this)});
 mediumBtn.addEventListener('click', function(){generateSummary(this)});
 detailedBtn.addEventListener('click', function(){generateSummary(this)});
 
-// get api key from api_key.json file
-const API_KEY = fetch('api_key.json')
-  .then(response => response.json())
-  .then(data => data.open_ai_key);
-
 // Functions to generate summary
 async function generateSummary(element) {
   outputField.value = '';
-  let prompt = `Summarize ${element.value}. Use bullet points and other structure when deemed relevant. Text: """${await getPageContent()}"""`;
-  await askGPT3(prompt, (chunk) => {
-    outputField.value += chunk.replace(/\n/g, '\n')
+  let prompt = await injectScriptIntoHost();
+  await askGPT(prompt, (chunk) => {
+    outputField.value += chunk
   });
 }
 
 function getPageContent() {
+  let pageText = '';
+  const pageNodes = document.querySelectorAll('body > :not(header):not(footer):not(style):not(script)') 
+  
+  for (let i = 0; i < pageNodes.length; i++) {
+    if (pageNodes[i].tagName.includes('SVG')) continue; // not anything with svg like <my-svg-tag>. unable to filter this with css selector
+    pageText += pageNodes[i].innerText + '\n';
+  }
+  return pageText;
+}
+
+function injectScriptIntoHost() {
   return new Promise((resolve, reject) => {
     chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
       chrome.scripting.executeScript({
         target: { tabId: tabs[0].id },
-        func: function () {
-          let pageText = '';
-          document.querySelectorAll('body > :not(header):not(footer):not(style):not(script)')
-            .forEach(function (node) {
-              pageText += node.innerText + '\n';
-            })
-          return pageText;
-        }
+        func: getPageContent,
       })
         .then((injectionResults) => {
           resolve(injectionResults[0].result);
@@ -48,39 +47,26 @@ function getPageContent() {
   });
 }
 
-async function askGPT3(prompt, onChunk) {
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+async function askGPT(prompt, onChunk) {
+  const response = await fetch('http://127.0.0.1:5000', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': 'Bearer ' + await API_KEY,
     },
     body: JSON.stringify({
-      'model': 'gpt-3.5-turbo',
-      'messages': [
-        {
-          'role': 'user',
-          'content': prompt
-        }
-      ],
-      'temperature': 0,
-      'n': 1,
-      'stream': true
+      'prompt': prompt,
+      'stream': true,
     })
   });
 
   const reader = response.body.getReader();
-  const decoder = new TextDecoder();
+  while (true) {
+    const {done, value} = await reader.read();
+    if (done) break;
+    let chunk = new TextDecoder().decode(value);
+    let data = JSON.parse(chunk)['content']
 
-  let chunk;
-  while (({ value: chunk, done: isDone } = await reader.read()), !isDone) {
-    const decodedChunk = decoder.decode(chunk);
-    
-    let content = '';
-    const contentRegex = /"content":"(.*?)"/g;
-    content = contentRegex.exec(decodedChunk);
-    if (content) {
-      onChunk(content[1]);
-    }
+    onChunk(data);
+
   }
 }
