@@ -1,51 +1,65 @@
-// Get references to the buttons and output field
-const lengthSelectors = document.querySelectorAll('.button-container input[type="radio"]');
-const outputField = document.getElementById('output');
+const output_toggle = document.getElementById('output_toggle')
+const output_field = document.getElementById('output')
+let length_selector = document.getElementById('output_length')
+let summary_length = "normal"
+let shouldStopStreaming = false
 
-// add onclick listeners to the buttons
-for (let i = 0; i < lengthSelectors.length; i++) {
-  lengthSelectors[i].onclick = function() {
-    generateSummary(this.value);
-  }
-}
+length_selector.addEventListener('change', (e)=> {
+  summary_length = e.target.value
+})
 
-// run on extension open
+output_toggle.addEventListener('click', () => {
+  generateSummary()
+})
+
+
 generateSummary();
 
+// &#8856; stop
+// &#8635; restart
 
-function saveCurrentTabsSummary(text) {
-  // Get the current tab ID
-  chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
-    const tabId = tabs[0].id;
-
-    // Save the generated summary for this tab
-    chrome.storage.local.set({[tabId]: text});
+function getTabId() {
+  return new Promise((resolve, reject) => {
+    chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+      resolve(tabs[0].id);
+    })
   });
 }
 
-function retrieveCurrentTabsSummary() {
-  // Get the current tab ID
-  chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
-    const tabId = tabs[0].id;
+async function setToTabStorage(key, value) {
+  const tabKey = `${await getTabId()}_${key}`;
+  chrome.storage.local.set({[tabKey]: value});
+}
 
-    // Retrieve the summary for this tab
-    chrome.storage.local.get(tabId, function(result) {
-      const summary = result[tabId];
-      console.log('Summary retreived!');
-      return summary;
-    });
+async function getFromTabStorage(key) {
+  const tabKey = `${await getTabId()}_${key}`;
+  chrome.storage.local.get(tabKey, function(result) {
+    const summary = result[tabKey];
+    console.log('Summary retreived!');
+    return summary;
   });
 }
 
 // Functions to generate summary
-async function generateSummary(element) {
-  outputField.value = '';
-  let prompt = await injectScriptIntoHost();
-  await askGPT(prompt, (chunk) => {
-    outputField.value += chunk
+async function generateSummary() {
+  shouldStopStreaming = true;
+
+  let prompt = await injectScriptIntoHost(getPageContent);
+  prompt = prompt.split(" ").slice(0, 1500).join(" ")+"..."; // 2867 is the max length of the prompt
+  console.log(prompt)
+
+  output_field.value = "";
+
+  shouldStopStreaming = false;
+
+  await askGPT(prompt, (message) => {
+    output_field.value += message
   });
 }
 
+/**
+ * @returns {string} pageText
+ */
 function getPageContent() {
   let pageText = '';
   const pageNodes = document.querySelectorAll('body > :not(header):not(footer):not(style):not(script)') 
@@ -57,12 +71,16 @@ function getPageContent() {
   return pageText;
 }
 
-function injectScriptIntoHost() {
+/**
+ * @param {function} script 
+ * @returns {Promise} injectionResults
+ */
+function injectScriptIntoHost(script) {
   return new Promise((resolve, reject) => {
     chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
       chrome.scripting.executeScript({
         target: { tabId: tabs[0].id },
-        func: getPageContent,
+        func: script,
       })
         .then((injectionResults) => {
           resolve(injectionResults[0].result);
@@ -76,6 +94,9 @@ function injectScriptIntoHost() {
 }
 
 async function askGPT(prompt, onChunk) {
+  const controller = new AbortController();
+  const signal = controller.signal;
+
   const response = await fetch('http://127.0.0.1:5000', {
     method: 'POST',
     headers: {
@@ -83,18 +104,36 @@ async function askGPT(prompt, onChunk) {
     },
     body: JSON.stringify({
       'prompt': prompt,
+      'length': summary_length,
       'stream': true,
-    })
+    }),
+    signal
   });
 
+  if (!response.ok) {
+    output_field.value = "Error connecting to server."
+    throw new Error('Error fetching data');
+  }
+
   const reader = response.body.getReader();
+  let buffer = '', chunk = '';
+
+  if (shouldStopStreaming) {
+    controller.abort();
+    buffer = '', chunk = '';
+  }
+
   while (true) {
     const {done, value} = await reader.read();
     if (done) break;
-    let chunk = new TextDecoder().decode(value);
-    let data = JSON.parse(chunk)['content']
-
-    onChunk(data);
-
+    chunk = new TextDecoder().decode(value);
+    buffer += chunk;
+    while (buffer.indexOf('}') !== -1) {
+      let end = buffer.indexOf('}') + 1;
+      let message = JSON.parse(buffer.substring(0, end))['message'];
+      onChunk(message);
+      buffer = buffer.substring(end);
+    }
   }
+  shouldStopStreaming = true;
 }

@@ -6,10 +6,17 @@ import json
 openai.api_key = open("key.txt", "r").read().strip('\n')
 message_history = []
 
-def reset_history():
+def reset_history(length):
     global message_history
     message_history = [
-        {"role": "user", "content": f"You are a summarization bot. In my messages I will provide you with the content of webpages. Reply only with summaries to further input! Never include technical information about the website itself like wether it uses cookies or not. Summarize in the language of the website, for example if the websites content is in german, summarize in german. Use bullet points and other structure when deemed relevant"},
+        {"role": "user",
+            "content": f"""You are a summarization bot.
+            I will provide you with the content of a webpage.
+            Reply only with a {length} summary to further input!
+            Never include technical information about the website itself like wether it uses cookies or not.
+            Use paragraphs and bullet points like so:
+            '''This website is about a thing. Here are its key takeaways: - Thing 1 - Thing 2 - Thing 3'''
+            """},
         {"role": "assistant", "content": "OK, let's start!"}
     ]
 
@@ -25,12 +32,10 @@ def generate_completion(input):
     )
 
     for chunk in completion:
-        if "content" in chunk["choices"][0]["delta"]: # https://github.com/openai/openai-cookbook/blob/main/examples/How_to_stream_completions.ipynb
-            yield json.dumps({"content": chunk["choices"][0]["delta"]["content"]})
-        
-        if not chunk["choices"][0]["delta"]:
-            yield json.dumps({"content": "", "stop": "true"})
-            
+        if "content" in chunk["choices"][0]["delta"]:
+            yield json.dumps({"message": chunk["choices"][0]["delta"]["content"]})
+            # https://github.com/openai/openai-cookbook/blob/main/examples/How_to_stream_completions.ipynb
+
     return 200
 
 
@@ -40,12 +45,16 @@ CORS(app, origins=r"^chrome-extension://")
 
 @app.route('/', methods=["POST"])
 def process_request():
-    payload = request.get_data()
-    
-    prompt = json.loads(payload)["prompt"]
+    json_payload = json.loads(request.get_data())
+    print(json_payload)
+    prompt = json_payload["prompt"]
+    length = "normal"
+    if "length" in json_payload:
+        length = json_payload["length"]
+
     print('Payload received!')
 
-    reset_history()
+    reset_history(length)
     return Response(stream_with_context(generate_completion(prompt)), mimetype="application/json")
 
 @app.route('/', methods=["GET"])

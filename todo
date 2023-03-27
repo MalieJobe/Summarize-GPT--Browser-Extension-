@@ -1,8 +1,10 @@
 before release:
 - length of summary
-- dark mode design
-- upload python script
-- remember state of output
 
 after / secondary:
 - donation section
+- stop generating stream if extension is closed
+- remember state of output
+- remember state of output_length
+- dark mode design
+- info message if prompt has been cut of due to too large
