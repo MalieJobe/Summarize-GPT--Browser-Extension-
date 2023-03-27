@@ -1,13 +1,41 @@
 // Get references to the buttons and output field
-const briefBtn = document.getElementById('brief-btn');
-const mediumBtn = document.getElementById('medium-btn');
-const detailedBtn = document.getElementById('detailed-btn');
+const lengthSelectors = document.querySelectorAll('.button-container input[type="radio"]');
 const outputField = document.getElementById('output');
 
-// Add click listeners to the buttons
-briefBtn.addEventListener('click', function(){generateSummary(this)});
-mediumBtn.addEventListener('click', function(){generateSummary(this)});
-detailedBtn.addEventListener('click', function(){generateSummary(this)});
+// add onclick listeners to the buttons
+for (let i = 0; i < lengthSelectors.length; i++) {
+  lengthSelectors[i].onclick = function() {
+    generateSummary(this.value);
+  }
+}
+
+// run on extension open
+generateSummary();
+
+
+function saveCurrentTabsSummary(text) {
+  // Get the current tab ID
+  chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+    const tabId = tabs[0].id;
+
+    // Save the generated summary for this tab
+    chrome.storage.local.set({[tabId]: text});
+  });
+}
+
+function retrieveCurrentTabsSummary() {
+  // Get the current tab ID
+  chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+    const tabId = tabs[0].id;
+
+    // Retrieve the summary for this tab
+    chrome.storage.local.get(tabId, function(result) {
+      const summary = result[tabId];
+      console.log('Summary retreived!');
+      return summary;
+    });
+  });
+}
 
 // Functions to generate summary
 async function generateSummary(element) {

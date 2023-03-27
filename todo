@@ -1,8 +1,8 @@
 before release:
 - length of summary
-- extension design incl. logo
 - dark mode design
 - upload python script
+- remember state of output
 
 after / secondary:
 - donation section
