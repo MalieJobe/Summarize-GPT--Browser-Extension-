@@ -9,7 +9,7 @@ message_history = []
 def reset_history():
     global message_history
     message_history = [
-        {"role": "user", "content": f"You are a summarization bot. In my messages I will provide you with the content of webpages. Reply only with summaries to further input! Never include technical information about the website itself like wether it uses cookies or not. Use bullet points and other structure when deemed relevant"},
+        {"role": "user", "content": f"You are a summarization bot. In my messages I will provide you with the content of webpages. Reply only with summaries to further input! Never include technical information about the website itself like wether it uses cookies or not. Summarize in the language of the website, for example if the websites content is in german, summarize in german. Use bullet points and other structure when deemed relevant"},
         {"role": "assistant", "content": "OK, let's start!"}
     ]
 
